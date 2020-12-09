@@ -612,15 +612,16 @@ plot(fit_forward)
 ```
 
 ![](data-exploration_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-Based on the three variable selection methods performed. We can confirm
-that stepwise regression is the best method. It drops out variables that
-are not significant to the linear model.  
-Moreover, if we fit a linear model based on stepwise regression, then
-all variables that hvae been selected from the original dataset
-contributes significantly to the model.  
-However, I reconize that the normal Q-Q plot is not perfect. I would not
-be concerned by it, but we may try to detect multicollinearity and see
-how it would change.  
+
+  - Based on the three variable selection methods performed. We can
+    confirm that stepwise regression is the best method. It drops out
+    variables that are not significant to the linear model.  
+  - Moreover, if we fit a linear model based on stepwise regression,
+    then all variables that hvae been selected from the original dataset
+    contributes significantly to the model.  
+  - However, I reconize that the normal Q-Q plot is not perfect. I would
+    not be concerned by it, but we may try to detect multicollinearity
+    and see how it would change.  
 
 ## **Multicollinearity detection**
 
@@ -690,16 +691,16 @@ vif(fit_stepwise)
     ##               Total.expenditure 
     ##                        1.167310
 
-Varible infant.deaths and variable under.five.deaths have a VIF value
-over 160, which indicates multicollinearity.  
-Variable schooling and Variable Income.composition.of.resources have a
-VIF value over 3, which may be a cause for concern.  
-Since infant death and death under five years old tells almost the same
-story. In our case, it would be fine if we remove varible infant
-death.  
-similarly, variable schooling can be removed. Since Income composition
-of resources determines the amount of schooling an individual may
-take.  
+  - Varible infant.deaths and variable under.five.deaths have a VIF
+    value over 160, which indicates multicollinearity.  
+  - Variable schooling and Variable Income.composition.of.resources have
+    a VIF value over 3, which may be a cause for concern.  
+  - Since infant death and death under five years old tells almost the
+    same story. In our case, it would be fine if we remove varible
+    infant death.  
+  - similarly, variable schooling can be removed. Since Income
+    composition of resources determines the amount of schooling an
+    individual may take.  
 
 **Fit a linear model based on VIF**
 
@@ -809,13 +810,13 @@ WHO_df[2311, 1:5]
     ##           Country Year     Status Life.expectancy Adult.Mortality
     ## 2311 Sierra Leone 2002 Developing              48             513
 
-Observation 1128, 2308, 2310 caused concerns. I extracted those
-observations from the original dataset, so I can be sure that I did not
-make any mistake during the data cleaning process.  
-Observation 1128 is Haiti’s observation in 2010. Notice that there was
-an earthquake took place during that time. An estimated 250000 people
-died, and at least 300000 people were injured. I suppose unusual events
-like this can be a reason for causing outliers in the dataset. In this
-case, observation 1128 is valid.  
-Observation 2308 and 2310 have inaccurate data entries on
-Adult.Mortality. We may choose to remove or ignore them.
+  - Observation 1128, 2308, 2310 caused concerns. I extracted those
+    observations from the original dataset, so I can be sure that I did
+    not make any mistake during the data cleaning process.  
+  - Observation 1128 is Haiti’s observation in 2010. Notice that there
+    was an earthquake took place during that time. An estimated 250000
+    people died, and at least 300000 people were injured. I suppose
+    unusual events like this can be a reason for causing outliers in the
+    dataset. In this case, observation 1128 is valid.  
+  - Observation 2308 and 2310 have inaccurate data entries on
+    Adult.Mortality. We may choose to remove or ignore them.
