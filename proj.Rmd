@@ -2,7 +2,7 @@
 title: "Regression analysis for WHO data"
 author: "Peiyuan Li"
 date: "November 24, 2020"
-output: html_document
+output: rmarkdown::github_document
 editor_options: 
   chunk_output_type: console
 ---
