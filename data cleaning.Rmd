@@ -2,7 +2,7 @@
 title: "Data cleaning"
 author: "Peiyuan Li"
 date: "December 8, 2020"
-output: html_document
+output: rmarkdown::github_document
 editor_options: 
   chunk_output_type: console
 ---
