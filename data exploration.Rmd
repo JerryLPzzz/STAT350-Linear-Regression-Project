@@ -1,0 +1,175 @@
+---
+title: "Data exploration"
+author: "Peiyuan Li"
+date: "December 8, 2020"
+output: html_document
+editor_options: 
+---
+**Let us read the saved dataset from the previous section using read.csv command**
+```{r}
+WHO_df <- read.csv("WHO_data_filled.csv",header=TRUE)
+```
+
+## **Univariate analysis**
+**Univariate analysis with boxplot**
+```{r fig.height=10, fig.width=13}
+par(mfrow=c(3,6))
+for (i in 4:length(WHO_df)) {
+        boxplot(WHO_df[,i], main=names(WHO_df[i]))
+}
+```
+By looking at the boxplot, we may find a large number of outliers. However, I suspect that those values are correct, because I recognize that we do not live in a perfect world. The wealth distribution across the world varies a lot. Not to mention that countless people are still struggling with wars and diseases.\
+
+**Univariate analysis with histogram**
+```{r fig.height=10, fig.width=13}
+par(mfrow=c(3,6))
+for (i in 4:length(WHO_df)) {
+        hist(WHO_df[,i], main=names(WHO_df[i]), xlab = names(WHO_df[i]))
+}
+```
+Histogram provides an idea of the distribution of values for each variable. It tells us that not all variable's values are normally distributed.\
+
+**Let us try to fit a linear model**
+```{r}
+For_lm_DF <- WHO_df[-c(1:2)]
+```
+Before we fit it with "lm" command, I must drop two more variables: Country and Year. For variable Country, it would be unrealistic to fit it into a linear model, because it has 193 different countries, which is impossible to fit it into a linear model. For variable Year, it tells us when the variable was collected. However, it does not provide any insight for a linear model. Because it is unreasonable to assume individual's life expectancy to change due to variable year only.\
+```{r}
+fit <- lm(Life.expectancy ~ ., data = For_lm_DF)
+summary(fit)
+```
+By looking at the summary report, we find some of p-values corresponding to the coefficients are large, it indicates that not all of them are statistically significant. We may need to select or transform them.\
+
+## **Variable selection methods**
+**Stepwise regression**
+```{r, warning=FALSE, message=FALSE}
+library(olsrr)
+ols_step_both_p(fit)
+```
+Stepwise regression method selects 13 out of 18 variables. We may interpret the selected variables later.\
+
+**Backward elimination**
+```{r}
+ols_step_backward_p(fit)
+```
+Backward elimination method leaves 15 out of 18 variables. We may interpret the selected variables later.\
+
+**Forward selection**
+```{r}
+ols_step_forward_p(fit)
+```
+Forward selection method selects 15 out of 18 variables. We may interpret the selected variables later.\
+Notice the three selection methods provides three different results, we must fit each of those results into a lm function and select one.\
+
+**Fit a linear model based on stepwise regression**
+```{r}
+fit_stepwise <- lm(Life.expectancy ~ Adult.Mortality + Income.composition.of.resources +
+                     Schooling + HIV.AIDS + Diphtheria + Status + BMI + Polio + GDP + 
+                     under.five.deaths + infant.deaths + Alcohol + Total.expenditure, 
+                   data = For_lm_DF)
+summary(fit_stepwise)
+par(mfrow=c(2,2))
+plot(fit_stepwise)
+```
+
+**Fit a linear model based on backward elimination**
+```{r}
+fit_backward <- lm(Life.expectancy ~ Adult.Mortality + Income.composition.of.resources +
+                     Schooling + HIV.AIDS + Diphtheria + Status + BMI + Polio + GDP + 
+                     under.five.deaths + infant.deaths + Alcohol + Total.expenditure + 
+                     Measles + thinness.5.9.years, 
+                   data = For_lm_DF)
+summary(fit_backward)
+par(mfrow=c(2,2))
+plot(fit_backward)
+```
+
+**Fit a linear model based on forward selection**
+```{r}
+fit_forward <- lm(Life.expectancy ~ Adult.Mortality + Income.composition.of.resources +
+                     Schooling + HIV.AIDS + Diphtheria + Status + BMI + Polio + GDP + 
+                     under.five.deaths + infant.deaths + Alcohol + Total.expenditure + 
+                     thinness..1.19.years + Measles, 
+                   data = For_lm_DF)
+summary(fit_forward)
+par(mfrow=c(2,2))
+plot(fit_forward)
+```
+Based on the three variable selection methods performed. We can confirm that stepwise regression is the best method. It drops out variables that are not significant to the linear model.\
+Moreover, if we fit a linear model based on stepwise regression, then all variables that hvae been selected from the original dataset contributes significantly to the model.\
+However, I reconize that the normal Q-Q plot is not perfect. I would not be concerned by it, but we may try to detect multicollinearity and see how it would change.\
+
+## **Multicollinearity detection**
+**correlation matrix heatmap**
+```{r fig.height=10, fig.width=13, warning=FALSE}
+stepwise_lm_DF <- For_lm_DF[-c(6,7,8,17,16)]
+
+For_cormat_DF <- stepwise_lm_DF[-c(1)]
+cormat <- round(cor(For_cormat_DF),2)
+
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+upper_tri <- get_upper_tri(cormat)
+
+library(reshape2)
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+# Heatmap
+library(ggplot2)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 60, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+```
+Correlation matrix heatmap provides a good visualization for detecting multicollinearity. In this case, it detects multicollinearity. Notice that, Varible infant.deaths and variable under.five.deaths are highly linearly related. Variable schooling and Variable Income.composition.of.resources are linearly related. We should compute VIF value for further interpretation.\
+
+**Variance inflation factor**
+```{r, warning=FALSE, message=FALSE}
+library(car)
+vif(fit_stepwise)
+```
+Varible infant.deaths and variable under.five.deaths have a VIF value over 160, which indicates multicollinearity.\
+Variable schooling and Variable Income.composition.of.resources have a VIF value over 3, which may be a cause for concern.\
+Since infant death and death under five years old tells almost the same story. In our case, it would be fine if we remove varible infant death.\
+similarly, variable schooling can be removed. Since Income composition of resources determines the amount of schooling an individual may take.\
+
+**Fit a linear model based on VIF**
+```{r}
+stepwise_Fix.multicol_lm_DF <- stepwise_lm_DF[-c(4, 14)] 
+fit_stepwise_Fix.multicol <- lm(Life.expectancy ~ .,
+                                data = stepwise_Fix.multicol_lm_DF)
+summary(fit_stepwise_Fix.multicol)
+par(mfrow=c(2,2))
+plot(fit_stepwise_Fix.multicol)
+```
+
+It appears that we have slighly improved our linear model. At this point, we should be focusing on the outliers indicated on the plots.\
+
+## **Outlier interpretation**
+**Exam the observation point**
+```{r}
+WHO_df[1127, 1:5]
+WHO_df[1128, 1:5] #outlier
+WHO_df[1129, 1:5]
+WHO_df[2307, 1:5]
+WHO_df[2308, 1:5] #outlier
+WHO_df[2309, 1:5]
+WHO_df[2310, 1:5] #outlier
+WHO_df[2311, 1:5]
+```
+Observation 1128, 2308, 2310 caused concerns. I extracted those observations from the original dataset, so I can be sure that I did not make any mistake during the data cleaning process.\
+Observation 1128 is Haiti's observation in 2010. Notice that there was an earthquake took place during that time. An estimated 250000 people died, and at least 300000 people were injured. I suppose unusual events like this can be a reason for causing outliers in the dataset. In this case, observation 1128 is valid.\
+Observation 2308 and 2310 have inaccurate data entries on Adult.Mortality. We may choose to remove or ignore them.\
